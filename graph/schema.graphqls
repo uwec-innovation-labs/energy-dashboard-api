@@ -1,0 +1,15 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type EnergyDataPoint {
+  value: Int! # Energy data value
+  building: String! # Building name i.e. Davies
+  dateTimeUnix: Int! # Date time value in Epoch time
+  unit: String! # Energy unit i.e. kw, kwh, etc.
+  type: String! # Energy type i.e. electric, condensate, etc.
+}
+
+type Query {
+  energyDataPoints: [EnergyDataPoint!]!
+}
