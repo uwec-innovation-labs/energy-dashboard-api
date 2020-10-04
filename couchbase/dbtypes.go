@@ -1,5 +1,6 @@
 package couchbase
 
+// Data format of the CouchBase db
 type CouchData struct {
 	BuildingName  string `json:"buildingName"`
 	EnergyType    string `json:"energyType"`

@@ -8,6 +8,7 @@ import (
 	"github.com/couchbase/gocb/v2"
 )
 
+/* DateRangeQuery queries the database on a date range, building name, energy type, and bucket (kw/kwh) */
 func DateRangeQuery(bucketName string, dateLow int, dateHigh int, building string, energyType string) []model.EnergyDataPoint {
 	cluster, err := gocb.Connect(
 		"localhost",
@@ -24,7 +25,7 @@ func DateRangeQuery(bucketName string, dateLow int, dateHigh int, building strin
 	err = bucket.WaitUntilReady(5*time.Second, nil)
 
 	query := fmt.Sprintf("SELECT doc.* FROM `%s` doc WHERE doc.buildingName = \"%s\" AND doc.energyType = \"%s\" AND doc.unixTimeValue >= %d AND doc.unixTimeValue <= %d",
-		building, energyType, bucketName, dateLow, dateHigh)
+		bucketName, building, energyType, dateLow, dateHigh)
 
 	rows, err := cluster.Query(query, nil)
 

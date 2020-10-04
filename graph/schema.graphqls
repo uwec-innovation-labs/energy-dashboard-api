@@ -10,6 +10,43 @@ type EnergyDataPoint {
   type: String! # Energy type i.e. electric, condensate, etc.
 }
 
+input EnergyDataPointQueryInput {
+  building: String!
+  dateLow: Int!
+  dateHigh: Int!
+  energyType: String!
+  energyUnit: String!
+}
+
+type Past24Hours {
+  data: [EnergyDataPoint!]!
+}
+
+input Past24HoursInput {
+  building: String!
+  energyType: String!
+  energyUnit: String!
+}
+
+type BuildingInfo {
+  building: String!
+  energyInfo: [EnergyInfo!]!
+  displayName: String!
+}
+
+type EnergyInfo {
+  energyType: String!
+  reportInterval: Int!
+  minDate: Int!
+  maxDate: Int!
+}
+
+input BuildingInfoInput {
+  buildingName: String!
+}
+
 type Query {
-  energyDataPoints: [EnergyDataPoint!]!
+  energyDataPoints(input: EnergyDataPointQueryInput!): [EnergyDataPoint!]!
+  past24Hours(input: Past24HoursInput!): [EnergyDataPoint]!
+  buildingInfo(input BuildingInfoInput!): BuildingInfo!
 }
