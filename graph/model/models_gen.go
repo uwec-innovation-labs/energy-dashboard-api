@@ -2,10 +2,45 @@
 
 package model
 
+type BuildingInfo struct {
+	Building    string        `json:"building"`
+	EnergyInfo  []*EnergyInfo `json:"energyInfo"`
+	DisplayName string        `json:"displayName"`
+}
+
+type BuildingInfoInput struct {
+	BuildingName string `json:"buildingName"`
+}
+
 type EnergyDataPoint struct {
 	Value        int    `json:"value"`
 	Building     string `json:"building"`
 	DateTimeUnix int    `json:"dateTimeUnix"`
 	Unit         string `json:"unit"`
 	Type         string `json:"type"`
+}
+
+type EnergyDataPointQueryInput struct {
+	Building   string `json:"building"`
+	DateLow    int    `json:"dateLow"`
+	DateHigh   int    `json:"dateHigh"`
+	EnergyType string `json:"energyType"`
+	EnergyUnit string `json:"energyUnit"`
+}
+
+type EnergyInfo struct {
+	EnergyType     string `json:"energyType"`
+	ReportInterval int    `json:"reportInterval"`
+	MinDate        int    `json:"minDate"`
+	MaxDate        int    `json:"maxDate"`
+}
+
+type Past24Hours struct {
+	Data []*EnergyDataPoint `json:"data"`
+}
+
+type Past24HoursInput struct {
+	Building   string `json:"building"`
+	EnergyType string `json:"energyType"`
+	EnergyUnit string `json:"energyUnit"`
 }

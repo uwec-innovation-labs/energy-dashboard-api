@@ -48,5 +48,5 @@ input BuildingInfoInput {
 type Query {
   energyDataPoints(input: EnergyDataPointQueryInput!): [EnergyDataPoint!]!
   past24Hours(input: Past24HoursInput!): [EnergyDataPoint]!
-  buildingInfo(input BuildingInfoInput!): BuildingInfo!
+  buildingInfo(input: BuildingInfoInput!): BuildingInfo!
 }

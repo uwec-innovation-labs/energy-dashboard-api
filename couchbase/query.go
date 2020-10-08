@@ -3,28 +3,36 @@ package couchbase
 import (
 	"energy-dashboard-api/graph/model"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/couchbase/gocb/v2"
+	"github.com/joho/godotenv"
 )
 
 /* DateRangeQuery queries the database on a date range, building name, energy type, and bucket (kw/kwh) */
-func DateRangeQuery(bucketName string, dateLow int, dateHigh int, building string, energyType string) []model.EnergyDataPoint {
+func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string, dateLow int, dateHigh int, building string, energyType string) {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Failed to load .env file")
+	}
 	cluster, err := gocb.Connect(
-		"localhost",
+		os.Getenv("COUCH_ADDR"),
 		gocb.ClusterOptions{
-			Username: "Administrator",
-			Password: "password",
+			Username: os.Getenv("COUCH_USR"),
+			Password: os.Getenv("COUCH_PASS"),
 		})
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Connected")
 
 	bucket := cluster.Bucket(bucketName)
 
 	err = bucket.WaitUntilReady(5*time.Second, nil)
 
-	query := fmt.Sprintf("SELECT doc.* FROM `%s` doc WHERE doc.buildingName = \"%s\" AND doc.energyType = \"%s\" AND doc.unixTimeValue >= %d AND doc.unixTimeValue <= %d",
+	query := fmt.Sprintf("SELECT doc.* FROM `%s` doc WHERE doc.BuildingName = '%s' AND doc.EnergyType = '%s' AND doc.UnixTimeValue >= %d AND doc.UnixTimeValue <= %d",
 		bucketName, building, energyType, dateLow, dateHigh)
 
 	rows, err := cluster.Query(query, nil)
@@ -32,8 +40,9 @@ func DateRangeQuery(bucketName string, dateLow int, dateHigh int, building strin
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Query")
 
-	var energyDataCouchbase []model.EnergyDataPoint
+	var energyDataCouchbase []*model.EnergyDataPoint
 
 	/*
 	   Value        int    `json:"value"`
@@ -51,7 +60,7 @@ func DateRangeQuery(bucketName string, dateLow int, dateHigh int, building strin
 			panic(err)
 		}
 
-		energyDataCouchbase = append(energyDataCouchbase, model.EnergyDataPoint{
+		energyDataCouchbase = append(energyDataCouchbase, &model.EnergyDataPoint{
 			Value:        energyPoint.EnergyValue,
 			Building:     energyPoint.BuildingName,
 			DateTimeUnix: energyPoint.UnixTimeValue,
@@ -59,6 +68,7 @@ func DateRangeQuery(bucketName string, dateLow int, dateHigh int, building strin
 			Type:         energyPoint.EnergyType,
 		})
 	}
+	fmt.Println("returning")
 
-	return energyDataCouchbase
+	returnValue <- energyDataCouchbase
 }
