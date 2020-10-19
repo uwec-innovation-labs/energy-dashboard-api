@@ -9,20 +9,29 @@ import (
 	"energy-dashboard-api/graph/generated"
 	"energy-dashboard-api/graph/model"
 	"fmt"
+	"time"
 )
+
+var mainCache = couchbase.CreateMainCache()
 
 func (r *queryResolver) EnergyDataPoints(ctx context.Context, input model.EnergyDataPointQueryInput) ([]*model.EnergyDataPoint, error) {
 	var returnValue chan []*model.EnergyDataPoint
 	if returnValue == nil {
 		returnValue = make(chan []*model.EnergyDataPoint)
 	}
-	go couchbase.DateRangeQuery(returnValue, input.EnergyUnit, input.DateLow, input.DateHigh, input.Building, input.EnergyType)
+	go couchbase.DateRangeQuery(returnValue, input.EnergyUnit, int64(input.DateLow), int64(input.DateHigh), input.Building, input.EnergyType)
 
 	return <-returnValue, nil
 }
 
 func (r *queryResolver) Past24Hours(ctx context.Context, input model.Past24HoursInput) ([]*model.EnergyDataPoint, error) {
-	panic(fmt.Errorf("not implemented"))
+	var returnValue chan []*model.EnergyDataPoint
+	if returnValue == nil {
+		returnValue = make(chan []*model.EnergyDataPoint)
+	}
+	go couchbase.DateRangeQuery(returnValue, input.EnergyUnit, (time.Now().Unix() - 86400), time.Now().Unix(), input.Building, input.EnergyType)
+
+	return <-returnValue, nil
 }
 
 func (r *queryResolver) BuildingInfo(ctx context.Context, input model.BuildingInfoInput) (*model.BuildingInfo, error) {
