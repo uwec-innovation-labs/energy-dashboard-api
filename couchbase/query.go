@@ -26,14 +26,13 @@ func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Connected")
 
 	bucket := cluster.Bucket(bucketName)
 
 	err = bucket.WaitUntilReady(5*time.Second, nil)
-
-	query := fmt.Sprintf("SELECT doc.* FROM `%s` doc WHERE doc.BuildingName = '%s' AND doc.EnergyType = '%s' AND doc.UnixTimeValue >= %d AND doc.UnixTimeValue <= %d",
-		bucketName, building, energyType, dateLow, dateHigh)
+	fmt.Println("Connected")
+	query := fmt.Sprintf("SELECT doc.* FROM `%s` doc USE INDEX (%s_query USING GSI) WHERE doc.BuildingName = \"%s\" AND doc.EnergyType = \"%s\" AND doc.UnixTimeValue >= %d AND doc.UnixTimeValue <= %d",
+		bucketName, bucketName, building, energyType, dateLow, dateHigh)
 
 	rows, err := cluster.Query(query, nil)
 
