@@ -8,18 +8,17 @@ import (
 	"energy-dashboard-api/couchbase"
 	"energy-dashboard-api/graph/generated"
 	"energy-dashboard-api/graph/model"
+	"energy-dashboard-api/mongo"
 	"fmt"
 	"time"
 )
-
-var mainCache = couchbase.CreateMainCache()
 
 func (r *queryResolver) EnergyDataPoints(ctx context.Context, input model.EnergyDataPointQueryInput) ([]*model.EnergyDataPoint, error) {
 	var returnValue chan []*model.EnergyDataPoint
 	if returnValue == nil {
 		returnValue = make(chan []*model.EnergyDataPoint)
 	}
-	go couchbase.DateRangeQuery(returnValue, input.EnergyUnit, int64(input.DateLow), int64(input.DateHigh), input.Building, input.EnergyType)
+	go mongo.Query(returnValue, input.EnergyUnit, int64(input.DateLow), int64(input.DateHigh), input.Building, input.EnergyType)
 
 	return <-returnValue, nil
 }
@@ -49,4 +48,5 @@ type queryResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
+
 type mutationResolver struct{ *Resolver }

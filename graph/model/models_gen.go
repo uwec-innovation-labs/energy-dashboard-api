@@ -13,11 +13,11 @@ type BuildingInfoInput struct {
 }
 
 type EnergyDataPoint struct {
-	Value        int    `json:"value"`
-	Building     string `json:"building"`
-	DateTimeUnix int    `json:"dateTimeUnix"`
-	Unit         string `json:"unit"`
-	Type         string `json:"type"`
+	Value        float64 `json:"value"`
+	Building     string  `json:"building"`
+	DateTimeUnix int     `json:"dateTimeUnix"`
+	Unit         string  `json:"unit"`
+	Type         string  `json:"type"`
 }
 
 type EnergyDataPointQueryInput struct {

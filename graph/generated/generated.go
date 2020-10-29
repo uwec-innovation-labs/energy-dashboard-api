@@ -277,7 +277,7 @@ var sources = []*ast.Source{
 # https://gqlgen.com/getting-started/
 
 type EnergyDataPoint {
-  value: Int! # Energy data value
+  value: Float! # Energy data value
   building: String! # Building name i.e. Davies
   dateTimeUnix: Int! # Date time value in Epoch time
   unit: String! # Energy unit i.e. kw, kwh, etc.
@@ -565,9 +565,9 @@ func (ec *executionContext) _EnergyDataPoint_value(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EnergyDataPoint_building(ctx context.Context, field graphql.CollectedField, obj *model.EnergyDataPoint) (ret graphql.Marshaler) {
@@ -2923,6 +2923,21 @@ func (ec *executionContext) marshalNEnergyInfo2ᚖenergyᚑdashboardᚑapiᚋgra
 		return graphql.Null
 	}
 	return ec._EnergyInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloat(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloat(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
