@@ -15,7 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func Query(returnValue chan []*model.EnergyDataPoint, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
+func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Failed to load .env file")

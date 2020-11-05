@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"energy-dashboard-api/couchbase"
+	"energy-dashboard-api/datacache"
 	"energy-dashboard-api/graph/generated"
 	"energy-dashboard-api/graph/model"
 	"energy-dashboard-api/mongo"
@@ -13,12 +14,15 @@ import (
 	"time"
 )
 
+var dataPointCache = datacache.CreateCache()
+var buildingDataCache = datacache.CreateCache()
+
 func (r *queryResolver) EnergyDataPoints(ctx context.Context, input model.EnergyDataPointQueryInput) ([]*model.EnergyDataPoint, error) {
 	var returnValue chan []*model.EnergyDataPoint
 	if returnValue == nil {
 		returnValue = make(chan []*model.EnergyDataPoint)
 	}
-	go mongo.Query(returnValue, input.EnergyUnit, int64(input.DateLow), int64(input.DateHigh), input.Building, input.EnergyType)
+	go mongo.DateRangeQuery(returnValue, input.EnergyUnit, int64(input.DateLow), int64(input.DateHigh), input.Building, input.EnergyType)
 
 	return <-returnValue, nil
 }
