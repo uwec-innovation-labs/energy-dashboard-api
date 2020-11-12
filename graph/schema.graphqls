@@ -37,9 +37,8 @@ type BuildingInfo {
 
 type EnergyInfo {
   energyType: String!
+  energyUnit: String!
   reportInterval: Int!
-  minDate: Int!
-  maxDate: Int!
 }
 
 input BuildingInfoInput {

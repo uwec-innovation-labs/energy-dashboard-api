@@ -28,6 +28,11 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 		}
 		returnValue <- &returnData
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
 	cachedData := datacache.CacheLookup(cache, "campus-kw")
 	if cachedData != nil {
 		returnValue <- cachedData
@@ -47,6 +52,11 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			returnValue <- &returnData
 		}
 		defer func() {
+			if r := recover(); r != nil {
+				err = r.(error)
+			}
+		}()
+		defer func() {
 			if err = client.Disconnect(ctx); err != nil {
 				errors.Error = true
 				errors.Errors = append(errors.Errors, "Error on client disconnect")
@@ -61,8 +71,12 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 		if err := client.Ping(ctx, readpref.Primary()); err != nil {
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
-		fmt.Println("Successfully connected and pinged.")
 
 		collection := client.Database("energy-dashboard").Collection("kw")
 
@@ -113,9 +127,6 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			returnValue <- &returnData
 		}
 
-		fmt.Println("Query successful")
-
-		fmt.Println("Format loop")
 		for _, doc := range energyDataPointsBSON {
 			dataPoint := &model.EnergyDataPoint{
 				Building:     doc.BuildingName,
@@ -152,6 +163,11 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 		}
 		returnValue <- &returnData
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
 	cachedData := datacache.CacheLookup(cache, "campus-kwh")
 	if cachedData != nil {
 		returnValue <- cachedData
@@ -185,8 +201,12 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 		if err := client.Ping(ctx, readpref.Primary()); err != nil {
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
-		fmt.Println("Successfully connected and pinged.")
 
 		collection := client.Database("energy-dashboard").Collection("kwh")
 
@@ -237,9 +257,6 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			returnValue <- &returnData
 		}
 
-		fmt.Println("Query successful")
-
-		fmt.Println("Format loop")
 		for _, doc := range energyDataPointsBSON {
 			dataPoint := &model.EnergyDataPoint{
 				Building:     doc.BuildingName,
@@ -260,6 +277,10 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			Data:   energyDataPointsJSON,
 			Errors: &errors,
 		}
+
 		returnValue <- &returnData
 	}
+}
+
+func BuildingQuery(returnValue chan *[]model.BuildingInfo, cache *ristretto.Cache) {
 }

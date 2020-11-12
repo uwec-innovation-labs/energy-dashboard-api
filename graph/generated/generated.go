@@ -64,8 +64,7 @@ type ComplexityRoot struct {
 
 	EnergyInfo struct {
 		EnergyType     func(childComplexity int) int
-		MaxDate        func(childComplexity int) int
-		MinDate        func(childComplexity int) int
+		EnergyUnit     func(childComplexity int) int
 		ReportInterval func(childComplexity int) int
 	}
 
@@ -190,19 +189,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EnergyInfo.EnergyType(childComplexity), true
 
-	case "EnergyInfo.maxDate":
-		if e.complexity.EnergyInfo.MaxDate == nil {
+	case "EnergyInfo.energyUnit":
+		if e.complexity.EnergyInfo.EnergyUnit == nil {
 			break
 		}
 
-		return e.complexity.EnergyInfo.MaxDate(childComplexity), true
-
-	case "EnergyInfo.minDate":
-		if e.complexity.EnergyInfo.MinDate == nil {
-			break
-		}
-
-		return e.complexity.EnergyInfo.MinDate(childComplexity), true
+		return e.complexity.EnergyInfo.EnergyUnit(childComplexity), true
 
 	case "EnergyInfo.reportInterval":
 		if e.complexity.EnergyInfo.ReportInterval == nil {
@@ -357,9 +349,8 @@ type BuildingInfo {
 
 type EnergyInfo {
   energyType: String!
+  energyUnit: String!
   reportInterval: Int!
-  minDate: Int!
-  maxDate: Int!
 }
 
 input BuildingInfoInput {
@@ -907,6 +898,41 @@ func (ec *executionContext) _EnergyInfo_energyType(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _EnergyInfo_energyUnit(ctx context.Context, field graphql.CollectedField, obj *model.EnergyInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EnergyInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnergyUnit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _EnergyInfo_reportInterval(ctx context.Context, field graphql.CollectedField, obj *model.EnergyInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -926,76 +952,6 @@ func (ec *executionContext) _EnergyInfo_reportInterval(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ReportInterval, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EnergyInfo_minDate(ctx context.Context, field graphql.CollectedField, obj *model.EnergyInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "EnergyInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MinDate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _EnergyInfo_maxDate(ctx context.Context, field graphql.CollectedField, obj *model.EnergyInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "EnergyInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MaxDate, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2654,18 +2610,13 @@ func (ec *executionContext) _EnergyInfo(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "energyUnit":
+			out.Values[i] = ec._EnergyInfo_energyUnit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "reportInterval":
 			out.Values[i] = ec._EnergyInfo_reportInterval(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "minDate":
-			out.Values[i] = ec._EnergyInfo_minDate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "maxDate":
-			out.Values[i] = ec._EnergyInfo_maxDate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

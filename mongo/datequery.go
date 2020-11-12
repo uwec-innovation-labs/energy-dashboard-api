@@ -26,6 +26,11 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		}
 		returnValue <- &returnData
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
 	// Replace the uri string with your MongoDB deployment's connection string.
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/?authSource=%s", os.Getenv("MONGO_USR"), os.Getenv("MONGO_PASS"), os.Getenv("MONGO_URL"), os.Getenv("MONGO_AUTHDB"))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -55,8 +60,12 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
-	fmt.Println("Successfully connected and pinged.")
 
 	collection := client.Database("energy-dashboard").Collection(bucketName)
 
@@ -103,10 +112,6 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		}
 		returnValue <- &returnData
 	}
-
-	fmt.Println("Query successful")
-
-	fmt.Println("Format loop")
 	for _, doc := range energyDataPointsBSON {
 		dataPoint := &model.EnergyDataPoint{
 			Building:     doc.BuildingName,
@@ -123,5 +128,4 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		Errors: &errors,
 	}
 	returnValue <- &returnData
-
 }

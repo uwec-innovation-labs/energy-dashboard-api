@@ -36,9 +36,8 @@ type EnergyDataPointsReturn struct {
 
 type EnergyInfo struct {
 	EnergyType     string `json:"energyType"`
+	EnergyUnit     string `json:"energyUnit"`
 	ReportInterval int    `json:"reportInterval"`
-	MinDate        int    `json:"minDate"`
-	MaxDate        int    `json:"maxDate"`
 }
 
 type Errors struct {
