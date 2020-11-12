@@ -5,7 +5,6 @@ import (
 	"energy-dashboard-api/datacache"
 	"energy-dashboard-api/graph/model"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -17,10 +16,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func CampusHomeKWQuery(returnValue chan []*model.EnergyDataPoint, cache *ristretto.Cache) {
+func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ristretto.Cache) {
+	errors := model.Errors{}
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Failed to load .env file")
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Unable to load environment variable")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
 	cachedData := datacache.CacheLookup(cache, "campus-kw")
 	if cachedData != nil {
@@ -32,23 +38,35 @@ func CampusHomeKWQuery(returnValue chan []*model.EnergyDataPoint, cache *ristret
 		defer cancel()
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 		if err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 		defer func() {
 			if err = client.Disconnect(ctx); err != nil {
-				panic(err)
+				errors.Error = true
+				errors.Errors = append(errors.Errors, "Error on client disconnect")
+				returnData := model.EnergyDataPointsReturn{
+					Data:   nil,
+					Errors: &errors,
+				}
+				returnValue <- &returnData
 			}
 		}()
 		// Ping the primary
 		if err := client.Ping(ctx, readpref.Primary()); err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
 		}
 		fmt.Println("Successfully connected and pinged.")
 
 		collection := client.Database("energy-dashboard").Collection("kw")
 
 		dateLow := time.Now().AddDate(0, 0, -1).Unix()
-
 		dateHigh := time.Now().Unix()
 
 		filter := bson.M{
@@ -65,20 +83,34 @@ func CampusHomeKWQuery(returnValue chan []*model.EnergyDataPoint, cache *ristret
 				}},
 			},
 		}
+
 		var energyDataPointsBSON []EnergyDataPointMongo
 		var energyDataPointsJSON []*model.EnergyDataPoint
 
 		opts := options.Find()
 		opts.SetSort(bson.D{{"UnixTimeValue", -1}})
-		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
+		ctx, cancelFilter := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancelFilter()
 		energyDocs, err := collection.Find(ctx, filter, opts)
 
 		if err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 
 		if err = energyDocs.All(ctx, &energyDataPointsBSON); err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 
 		fmt.Println("Query successful")
@@ -94,21 +126,33 @@ func CampusHomeKWQuery(returnValue chan []*model.EnergyDataPoint, cache *ristret
 			}
 			energyDataPointsJSON = append(energyDataPointsJSON, dataPoint)
 		}
+
 		addCache := datacache.SetCache(energyDataPointsJSON, cache, "0h20m", "campus-kw")
 		if !addCache {
-			log.Fatal("Cache Creation Failed")
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error creating cache. NOTE: This is not a fatal error")
 		}
-		returnValue <- energyDataPointsJSON
+		returnData := model.EnergyDataPointsReturn{
+			Data:   energyDataPointsJSON,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
-
 }
 
-func CampusHomeKWHQuery(returnValue chan []*model.EnergyDataPoint, cache *ristretto.Cache) {
+func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ristretto.Cache) {
+	errors := model.Errors{}
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Failed to load .env file")
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Unable to load environment variable")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
-	cachedData := datacache.CacheLookup(cache, "campus-kw")
+	cachedData := datacache.CacheLookup(cache, "campus-kwh")
 	if cachedData != nil {
 		returnValue <- cachedData
 	} else {
@@ -118,23 +162,35 @@ func CampusHomeKWHQuery(returnValue chan []*model.EnergyDataPoint, cache *ristre
 		defer cancel()
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 		if err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 		defer func() {
 			if err = client.Disconnect(ctx); err != nil {
-				panic(err)
+				errors.Error = true
+				errors.Errors = append(errors.Errors, "Error on client disconnect")
+				returnData := model.EnergyDataPointsReturn{
+					Data:   nil,
+					Errors: &errors,
+				}
+				returnValue <- &returnData
 			}
 		}()
 		// Ping the primary
 		if err := client.Ping(ctx, readpref.Primary()); err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
 		}
 		fmt.Println("Successfully connected and pinged.")
 
 		collection := client.Database("energy-dashboard").Collection("kwh")
 
-		dateLow := time.Now().AddDate(0, 0, -1).Unix()
-
+		dateLow := time.Now().AddDate(0, 0, -2).Unix()
 		dateHigh := time.Now().Unix()
 
 		filter := bson.M{
@@ -151,20 +207,34 @@ func CampusHomeKWHQuery(returnValue chan []*model.EnergyDataPoint, cache *ristre
 				}},
 			},
 		}
+
 		var energyDataPointsBSON []EnergyDataPointMongo
 		var energyDataPointsJSON []*model.EnergyDataPoint
 
 		opts := options.Find()
 		opts.SetSort(bson.D{{"UnixTimeValue", -1}})
-		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
+		ctx, cancelFilter := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancelFilter()
 		energyDocs, err := collection.Find(ctx, filter, opts)
 
 		if err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 
 		if err = energyDocs.All(ctx, &energyDataPointsBSON); err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 
 		fmt.Println("Query successful")
@@ -180,10 +250,16 @@ func CampusHomeKWHQuery(returnValue chan []*model.EnergyDataPoint, cache *ristre
 			}
 			energyDataPointsJSON = append(energyDataPointsJSON, dataPoint)
 		}
-		addCache := datacache.SetCache(energyDataPointsJSON, cache, "24h30m", "campus-kwh")
+
+		addCache := datacache.SetCache(energyDataPointsJSON, cache, "24h20m", "campus-kwh")
 		if !addCache {
-			log.Fatal("Cache Creation Failed")
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error creating cache. NOTE: This is not a fatal error")
 		}
-		returnValue <- energyDataPointsJSON
+		returnData := model.EnergyDataPointsReturn{
+			Data:   energyDataPointsJSON,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
 }

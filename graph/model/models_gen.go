@@ -6,6 +6,7 @@ type BuildingInfo struct {
 	Building    string        `json:"building"`
 	EnergyInfo  []*EnergyInfo `json:"energyInfo"`
 	DisplayName string        `json:"displayName"`
+	Errors      *Errors       `json:"errors"`
 }
 
 type BuildingInfoInput struct {
@@ -28,11 +29,21 @@ type EnergyDataPointQueryInput struct {
 	EnergyUnit string `json:"energyUnit"`
 }
 
+type EnergyDataPointsReturn struct {
+	Data   []*EnergyDataPoint `json:"data"`
+	Errors *Errors            `json:"errors"`
+}
+
 type EnergyInfo struct {
 	EnergyType     string `json:"energyType"`
 	ReportInterval int    `json:"reportInterval"`
 	MinDate        int    `json:"minDate"`
 	MaxDate        int    `json:"maxDate"`
+}
+
+type Errors struct {
+	Error  bool     `json:"error"`
+	Errors []string `json:"errors"`
 }
 
 type Past24Hours struct {

@@ -32,6 +32,7 @@ type BuildingInfo {
   building: String!
   energyInfo: [EnergyInfo!]!
   displayName: String!
+  errors: Errors!
 }
 
 type EnergyInfo {
@@ -45,8 +46,18 @@ input BuildingInfoInput {
   buildingName: String!
 }
 
+type Errors {
+  error: Boolean!
+  errors: [String!]!
+}
+
+type EnergyDataPointsReturn {
+  data: [EnergyDataPoint!]!
+  errors: Errors!
+}
+
 type Query {
-  energyDataPoints(input: EnergyDataPointQueryInput!): [EnergyDataPoint!]!
-  past24Hours(input: Past24HoursInput!): [EnergyDataPoint]!
+  energyDataPoints(input: EnergyDataPointQueryInput!): EnergyDataPointsReturn!
+  past24Hours(input: Past24HoursInput!): EnergyDataPointsReturn!
   buildingInfo(input: BuildingInfoInput!): BuildingInfo!
 }

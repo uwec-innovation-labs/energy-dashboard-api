@@ -4,7 +4,6 @@ import (
 	"context"
 	"energy-dashboard-api/graph/model"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -15,10 +14,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
+func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
+	errors := model.Errors{}
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Failed to load .env file")
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Unable to load environment variable")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
 	// Replace the uri string with your MongoDB deployment's connection string.
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/?authSource=%s", os.Getenv("MONGO_USR"), os.Getenv("MONGO_PASS"), os.Getenv("MONGO_URL"), os.Getenv("MONGO_AUTHDB"))
@@ -26,16 +32,29 @@ func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		panic(err)
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
+			errors.Error = true
+			errors.Errors = append(errors.Errors, "Error on client disconnect")
+			returnData := model.EnergyDataPointsReturn{
+				Data:   nil,
+				Errors: &errors,
+			}
+			returnValue <- &returnData
 		}
 	}()
 	// Ping the primary
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
-		panic(err)
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
 	}
 	fmt.Println("Successfully connected and pinged.")
 
@@ -61,15 +80,28 @@ func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{"UnixTimeValue", -1}})
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancelFilter := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancelFilter()
 	energyDocs, err := collection.Find(ctx, filter, opts)
 
 	if err != nil {
-		panic(err)
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
 
 	if err = energyDocs.All(ctx, &energyDataPointsBSON); err != nil {
-		panic(err)
+		errors.Error = true
+		errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
+		returnData := model.EnergyDataPointsReturn{
+			Data:   nil,
+			Errors: &errors,
+		}
+		returnValue <- &returnData
 	}
 
 	fmt.Println("Query successful")
@@ -85,6 +117,11 @@ func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string
 		}
 		energyDataPointsJSON = append(energyDataPointsJSON, dataPoint)
 	}
-	returnValue <- energyDataPointsJSON
+
+	returnData := model.EnergyDataPointsReturn{
+		Data:   energyDataPointsJSON,
+		Errors: &errors,
+	}
+	returnValue <- &returnData
 
 }

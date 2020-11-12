@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"energy-dashboard-api/couchbase"
 	"energy-dashboard-api/datacache"
 	"energy-dashboard-api/graph/generated"
 	"energy-dashboard-api/graph/model"
@@ -14,25 +13,22 @@ import (
 	"time"
 )
 
-var dataPointCache = datacache.CreateCache()
-var buildingDataCache = datacache.CreateCache()
-
-func (r *queryResolver) EnergyDataPoints(ctx context.Context, input model.EnergyDataPointQueryInput) ([]*model.EnergyDataPoint, error) {
-	var returnValue chan []*model.EnergyDataPoint
+func (r *queryResolver) EnergyDataPoints(ctx context.Context, input model.EnergyDataPointQueryInput) (*model.EnergyDataPointsReturn, error) {
+	var returnValue chan *model.EnergyDataPointsReturn
 	if returnValue == nil {
-		returnValue = make(chan []*model.EnergyDataPoint)
+		returnValue = make(chan *model.EnergyDataPointsReturn)
 	}
 	go mongo.DateRangeQuery(returnValue, input.EnergyUnit, int64(input.DateLow), int64(input.DateHigh), input.Building, input.EnergyType)
 
 	return <-returnValue, nil
 }
 
-func (r *queryResolver) Past24Hours(ctx context.Context, input model.Past24HoursInput) ([]*model.EnergyDataPoint, error) {
-	var returnValue chan []*model.EnergyDataPoint
+func (r *queryResolver) Past24Hours(ctx context.Context, input model.Past24HoursInput) (*model.EnergyDataPointsReturn, error) {
+	var returnValue chan *model.EnergyDataPointsReturn
 	if returnValue == nil {
-		returnValue = make(chan []*model.EnergyDataPoint)
+		returnValue = make(chan *model.EnergyDataPointsReturn)
 	}
-	go couchbase.DateRangeQuery(returnValue, input.EnergyUnit, (time.Now().Unix() - 86400), time.Now().Unix(), input.Building, input.EnergyType)
+	go mongo.DateRangeQuery(returnValue, input.EnergyUnit, (time.Now().Unix() - 86400), time.Now().Unix(), input.Building, input.EnergyType)
 
 	return <-returnValue, nil
 }
@@ -52,5 +48,7 @@ type queryResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
+var dataPointCache = datacache.CreateCache()
+var buildingDataCache = datacache.CreateCache()
 
 type mutationResolver struct{ *Resolver }

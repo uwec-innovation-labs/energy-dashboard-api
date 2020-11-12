@@ -19,19 +19,24 @@ func CreateCache() *ristretto.Cache {
 	return cache
 }
 
-func CacheLookup(lookupCache *ristretto.Cache, lookupKey string) []*model.EnergyDataPoint {
+func CacheLookup(lookupCache *ristretto.Cache, lookupKey string) *model.EnergyDataPointsReturn {
 	value, found := lookupCache.Get(lookupKey)
 
 	if !found {
 		return nil
 	}
-	returnVal, err := value.([]*model.EnergyDataPoint)
+	dataPoints, err := value.([]*model.EnergyDataPoint)
 
-	if !err {
-		return nil
+	returnValue := model.EnergyDataPointsReturn{
+		Data: dataPoints,
 	}
 
-	return returnVal
+	if !err {
+		returnValue.Errors.Error = true
+		returnValue.Errors.Errors = append(returnValue.Errors.Errors, "Error when grabbing from cache")
+	}
+
+	return &returnValue
 
 }
 

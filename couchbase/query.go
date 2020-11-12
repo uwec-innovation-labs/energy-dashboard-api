@@ -12,7 +12,8 @@ import (
 )
 
 /* DateRangeQuery queries the database on a date range, building name, energy type, and bucket (kw/kwh) */
-func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
+func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
+	var errors = model.Errors{}
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Failed to load .env file")
@@ -68,6 +69,10 @@ func DateRangeQuery(returnValue chan []*model.EnergyDataPoint, bucketName string
 		})
 	}
 	fmt.Println("returning")
+	var dataReturn = model.EnergyDataPointsReturn{
+		Data:   energyDataCouchbase,
+		Errors: &errors,
+	}
 
-	returnValue <- energyDataCouchbase
+	returnValue <- &dataReturn
 }
