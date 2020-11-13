@@ -18,12 +18,14 @@ import (
 
 func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ristretto.Cache) {
 	errors := model.Errors{}
+	data := []*model.EnergyDataPoint{}
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Unable to load environment variable")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
@@ -46,7 +48,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -61,7 +63,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 				errors.Error = true
 				errors.Errors = append(errors.Errors, "Error on client disconnect")
 				returnData := model.EnergyDataPointsReturn{
-					Data:   nil,
+					Data:   data,
 					Errors: &errors,
 				}
 				returnValue <- &returnData
@@ -72,7 +74,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -80,7 +82,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 
 		collection := client.Database("energy-dashboard").Collection("kw")
 
-		dateLow := time.Now().AddDate(0, 0, -1).Unix()
+		dateLow := time.Now().AddDate(0, 0, -200).Unix()
 		dateHigh := time.Now().Unix()
 
 		filter := bson.M{
@@ -111,7 +113,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -121,7 +123,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -153,12 +155,14 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 
 func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ristretto.Cache) {
 	errors := model.Errors{}
+	data := []*model.EnergyDataPoint{}
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Unable to load environment variable")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
@@ -181,7 +185,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -191,7 +195,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 				errors.Error = true
 				errors.Errors = append(errors.Errors, "Error on client disconnect")
 				returnData := model.EnergyDataPointsReturn{
-					Data:   nil,
+					Data:   data,
 					Errors: &errors,
 				}
 				returnValue <- &returnData
@@ -202,7 +206,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -210,7 +214,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 
 		collection := client.Database("energy-dashboard").Collection("kwh")
 
-		dateLow := time.Now().AddDate(0, 0, -2).Unix()
+		dateLow := time.Now().AddDate(0, 0, -200).Unix()
 		dateHigh := time.Now().Unix()
 
 		filter := bson.M{
@@ -241,7 +245,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -251,7 +255,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData

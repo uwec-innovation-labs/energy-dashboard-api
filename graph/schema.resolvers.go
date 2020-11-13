@@ -33,6 +33,25 @@ func (r *queryResolver) Past24Hours(ctx context.Context, input model.Past24Hours
 	return <-returnValue, nil
 }
 
+func (r *queryResolver) DashboardHomePage(ctx context.Context) (*model.DashboardHomePage, error) {
+	var kwEnergyValues chan *model.EnergyDataPointsReturn
+	if kwEnergyValues == nil {
+		kwEnergyValues = make(chan *model.EnergyDataPointsReturn)
+	}
+	var kwhEnergyValues chan *model.EnergyDataPointsReturn
+	if kwhEnergyValues == nil {
+		kwhEnergyValues = make(chan *model.EnergyDataPointsReturn)
+	}
+	go mongo.CampusHomeKWQuery(kwEnergyValues, datacache.GetDataPointCache())
+	go mongo.CampusHomeKWQuery(kwhEnergyValues, datacache.GetDataPointCache())
+
+	returnData := model.DashboardHomePage{
+		CampusKw:  <-kwEnergyValues,
+		CampusKwh: <-kwhEnergyValues,
+	}
+	return &returnData, nil
+}
+
 func (r *queryResolver) BuildingInfo(ctx context.Context, input model.BuildingInfoInput) (*model.BuildingInfo, error) {
 	panic(fmt.Errorf("not implemented"))
 }
@@ -48,7 +67,5 @@ type queryResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
-var dataPointCache = datacache.CreateCache()
-var buildingDataCache = datacache.CreateCache()
 
 type mutationResolver struct{ *Resolver }

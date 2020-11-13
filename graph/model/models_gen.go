@@ -13,6 +13,11 @@ type BuildingInfoInput struct {
 	BuildingName string `json:"buildingName"`
 }
 
+type DashboardHomePage struct {
+	CampusKw  *EnergyDataPointsReturn `json:"campusKW"`
+	CampusKwh *EnergyDataPointsReturn `json:"campusKWH"`
+}
+
 type EnergyDataPoint struct {
 	Value        float64 `json:"value"`
 	Building     string  `json:"building"`

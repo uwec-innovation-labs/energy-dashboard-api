@@ -55,8 +55,14 @@ type EnergyDataPointsReturn {
   errors: Errors!
 }
 
+type DashboardHomePage {
+  campusKW: EnergyDataPointsReturn!
+  campusKWH: EnergyDataPointsReturn!
+}
+
 type Query {
   energyDataPoints(input: EnergyDataPointQueryInput!): EnergyDataPointsReturn!
   past24Hours(input: Past24HoursInput!): EnergyDataPointsReturn!
+  dashboardHomePage: DashboardHomePage!
   buildingInfo(input: BuildingInfoInput!): BuildingInfo!
 }

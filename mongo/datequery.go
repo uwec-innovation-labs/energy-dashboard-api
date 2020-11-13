@@ -16,12 +16,14 @@ import (
 
 func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
 	errors := model.Errors{}
+	data := []*model.EnergyDataPoint{}
+
 	err := godotenv.Load(".env")
 	if err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Unable to load environment variable")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
@@ -40,7 +42,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
@@ -50,7 +52,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error on client disconnect")
 			returnData := model.EnergyDataPointsReturn{
-				Data:   nil,
+				Data:   data,
 				Errors: &errors,
 			}
 			returnValue <- &returnData
@@ -61,7 +63,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
@@ -97,7 +99,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
@@ -107,7 +109,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
 		returnData := model.EnergyDataPointsReturn{
-			Data:   nil,
+			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
