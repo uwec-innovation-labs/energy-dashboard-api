@@ -14,15 +14,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName string, dateLow int64, dateHigh int64, building string, energyType string) {
+func BuildingsQuery(returnValue chan *model.BuildingsQueryReturn) {
+	maxDate := 1611333000
+	minDate := 1554138000
 	errors := model.Errors{}
-	data := []*model.EnergyDataPoint{}
+	data := []*model.BuildingInfo{}
 
 	err := godotenv.Load(".env")
 	if err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Unable to load environment variable")
-		returnData := model.EnergyDataPointsReturn{
+		returnData := model.BuildingsQueryReturn{
 			Data:   data,
 			Errors: &errors,
 		}
@@ -41,7 +43,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 	if err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Errors connecting to Mongo instance")
-		returnData := model.EnergyDataPointsReturn{
+		returnData := model.BuildingsQueryReturn{
 			Data:   data,
 			Errors: &errors,
 		}
@@ -51,7 +53,7 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 		if err = client.Disconnect(ctx); err != nil {
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error on client disconnect")
-			returnData := model.EnergyDataPointsReturn{
+			returnData := model.BuildingsQueryReturn{
 				Data:   data,
 				Errors: &errors,
 			}
@@ -62,72 +64,54 @@ func DateRangeQuery(returnValue chan *model.EnergyDataPointsReturn, bucketName s
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error pinging Mongo instance")
-		returnData := model.EnergyDataPointsReturn{
+		returnData := model.BuildingsQueryReturn{
 			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
 	}
 
-	collection := client.Database("energy-dashboard").Collection(bucketName)
+	collection := client.Database("energy-dashboard").Collection("buildings")
 
-	filter := bson.M{
-		"$and": []interface{}{
-			bson.M{"BuildingName": building},
-			bson.M{"$and": []interface{}{
-				bson.M{"EnergyType": energyType},
-				bson.M{"$and": []interface{}{
-					bson.M{"UnixTimeValue": bson.M{"$gte": dateLow}},
-					bson.M{"$and": []interface{}{
-						bson.M{"UnixTimeValue": bson.M{"$lte": dateHigh}},
-					}},
-				}},
-			}},
-		},
-	}
+	filter := bson.M{}
 
-	var energyDataPointsBSON []EnergyDataPointMongo
-	var energyDataPointsJSON []*model.EnergyDataPoint
+	var buildingDataReturn []*model.BuildingInfo
 
-	opts := options.Find()
-	opts.SetSort(bson.D{{"UnixTimeValue", -1}})
+
 	ctx, cancelFilter := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancelFilter()
-	energyDocs, err := collection.Find(ctx, filter, opts)
+	buildingDocs, err := collection.Find(ctx, filter)
 
 	if err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error when querying Mongo instance")
-		returnData := model.EnergyDataPointsReturn{
+		returnData := model.BuildingsQueryReturn{
 			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
 	}
 
-	if err = energyDocs.All(ctx, &energyDataPointsBSON); err != nil {
+	if err = buildingDocs.All(ctx, &buildingDataReturn); err != nil {
 		errors.Error = true
 		errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
-		returnData := model.EnergyDataPointsReturn{
+		fmt.Print(err)
+		returnData := model.BuildingsQueryReturn{
 			Data:   data,
 			Errors: &errors,
 		}
 		returnValue <- &returnData
 	}
-	for _, doc := range energyDataPointsBSON {
-		dataPoint := &model.EnergyDataPoint{
-			Building:     doc.BuildingName,
-			Value:        doc.EnergyValue,
-			DateTimeUnix: doc.UnixTimeValue,
-			Unit:         doc.EnergyUnit,
-			Type:         doc.EnergyType,
-			ID:           doc.ID.String(),
+
+	for _, i := range buildingDataReturn {
+		for _, j := range i.EnergyInfo {
+			j.MinDate = minDate
+			j.MaxDate = maxDate
 		}
-		energyDataPointsJSON = append(energyDataPointsJSON, dataPoint)
 	}
 
-	returnData := model.EnergyDataPointsReturn{
-		Data:   energyDataPointsJSON,
+	returnData := model.BuildingsQueryReturn{
+		Data:   buildingDataReturn,
 		Errors: &errors,
 	}
 	returnValue <- &returnData

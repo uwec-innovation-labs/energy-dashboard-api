@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"energy-dashboard-api/datacache"
 	"energy-dashboard-api/graph/generated"
 	"energy-dashboard-api/graph/model"
 	"energy-dashboard-api/mongo"
@@ -33,27 +32,28 @@ func (r *queryResolver) Past24Hours(ctx context.Context, input model.Past24Hours
 	return <-returnValue, nil
 }
 
-func (r *queryResolver) DashboardHomePage(ctx context.Context) (*model.DashboardHomePage, error) {
-	var kwEnergyValues chan *model.EnergyDataPointsReturn
-	if kwEnergyValues == nil {
-		kwEnergyValues = make(chan *model.EnergyDataPointsReturn)
+func (r *queryResolver) CampusKWHCache(ctx context.Context) (*model.EnergyDataPointsReturn, error) {
+	var returnValue chan *model.EnergyDataPointsReturn
+	if returnValue == nil {
+		returnValue = make(chan *model.EnergyDataPointsReturn)
 	}
-	var kwhEnergyValues chan *model.EnergyDataPointsReturn
-	if kwhEnergyValues == nil {
-		kwhEnergyValues = make(chan *model.EnergyDataPointsReturn)
-	}
-	go mongo.CampusHomeKWQuery(kwEnergyValues, datacache.GetDataPointCache())
-	go mongo.CampusHomeKWQuery(kwhEnergyValues, datacache.GetDataPointCache())
-
-	returnData := model.DashboardHomePage{
-		CampusKw:  <-kwEnergyValues,
-		CampusKwh: <-kwhEnergyValues,
-	}
-	return &returnData, nil
+	//go mongo.CampusHomeKWHQuery(returnValue)
+	return nil, nil
 }
 
-func (r *queryResolver) BuildingInfo(ctx context.Context, input model.BuildingInfoInput) (*model.BuildingInfo, error) {
+func (r *queryResolver) CampusKWCache(ctx context.Context) (*model.EnergyDataPointsReturn, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) BuildingInfo(ctx context.Context) (*model.BuildingsQueryReturn, error) {
+	var returnValue chan *model.BuildingsQueryReturn
+	if returnValue == nil {
+		returnValue = make(chan *model.BuildingsQueryReturn)
+	}
+
+	go mongo.BuildingsQuery(returnValue)
+
+	return <-returnValue, nil
 }
 
 // Query returns generated.QueryResolver implementation.
@@ -67,5 +67,4 @@ type queryResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
-
 type mutationResolver struct{ *Resolver }

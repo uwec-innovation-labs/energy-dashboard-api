@@ -3,6 +3,7 @@
 # https://gqlgen.com/getting-started/
 
 type EnergyDataPoint {
+  id: String!
   value: Float! # Energy data value
   building: String! # Building name i.e. Davies
   dateTimeUnix: Int! # Date time value in Epoch time
@@ -32,13 +33,14 @@ type BuildingInfo {
   building: String!
   energyInfo: [EnergyInfo!]!
   displayName: String!
-  errors: Errors!
 }
 
 type EnergyInfo {
   energyType: String!
   energyUnit: String!
   reportInterval: Int!
+  minDate: Int!
+  maxDate: Int!
 }
 
 input BuildingInfoInput {
@@ -55,14 +57,15 @@ type EnergyDataPointsReturn {
   errors: Errors!
 }
 
-type DashboardHomePage {
-  campusKW: EnergyDataPointsReturn!
-  campusKWH: EnergyDataPointsReturn!
+type BuildingsQueryReturn {
+  data: [BuildingInfo]
+  errors: Errors!
 }
 
 type Query {
   energyDataPoints(input: EnergyDataPointQueryInput!): EnergyDataPointsReturn!
   past24Hours(input: Past24HoursInput!): EnergyDataPointsReturn!
-  dashboardHomePage: DashboardHomePage!
-  buildingInfo(input: BuildingInfoInput!): BuildingInfo!
+  campusKWHCache: EnergyDataPointsReturn!
+  campusKWCache: EnergyDataPointsReturn!
+  buildingInfo: BuildingsQueryReturn!
 }

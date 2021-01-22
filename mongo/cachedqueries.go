@@ -82,8 +82,8 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 
 		collection := client.Database("energy-dashboard").Collection("kw")
 
-		dateLow := time.Now().AddDate(0, 0, -200).Unix()
-		dateHigh := time.Now().Unix()
+		dateLow := time.Now().Local().AddDate(0, 0, -1).Unix()
+		dateHigh := time.Now().Local().Unix()
 
 		filter := bson.M{
 			"$and": []interface{}{
@@ -100,7 +100,6 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			},
 		}
 
-		var energyDataPointsBSON []EnergyDataPointMongo
 		var energyDataPointsJSON []*model.EnergyDataPoint
 
 		opts := options.Find()
@@ -119,7 +118,7 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 			returnValue <- &returnData
 		}
 
-		if err = energyDocs.All(ctx, &energyDataPointsBSON); err != nil {
+		if err = energyDocs.All(ctx, &energyDataPointsJSON); err != nil {
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
 			returnData := model.EnergyDataPointsReturn{
@@ -127,17 +126,6 @@ func CampusHomeKWQuery(returnValue chan *model.EnergyDataPointsReturn, cache *ri
 				Errors: &errors,
 			}
 			returnValue <- &returnData
-		}
-
-		for _, doc := range energyDataPointsBSON {
-			dataPoint := &model.EnergyDataPoint{
-				Building:     doc.BuildingName,
-				Value:        doc.EnergyValue,
-				DateTimeUnix: doc.UnixTimeValue,
-				Unit:         doc.EnergyUnit,
-				Type:         doc.EnergyType,
-			}
-			energyDataPointsJSON = append(energyDataPointsJSON, dataPoint)
 		}
 
 		addCache := datacache.SetCache(energyDataPointsJSON, cache, "0h20m", "campus-kw")
@@ -214,8 +202,8 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 
 		collection := client.Database("energy-dashboard").Collection("kwh")
 
-		dateLow := time.Now().AddDate(0, 0, -200).Unix()
-		dateHigh := time.Now().Unix()
+		dateLow := time.Now().Local().AddDate(0, 0, -1).Unix()
+		dateHigh := time.Now().Local().Unix()
 
 		filter := bson.M{
 			"$and": []interface{}{
@@ -232,7 +220,6 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			},
 		}
 
-		var energyDataPointsBSON []EnergyDataPointMongo
 		var energyDataPointsJSON []*model.EnergyDataPoint
 
 		opts := options.Find()
@@ -251,7 +238,7 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 			returnValue <- &returnData
 		}
 
-		if err = energyDocs.All(ctx, &energyDataPointsBSON); err != nil {
+		if err = energyDocs.All(ctx, &energyDataPointsJSON); err != nil {
 			errors.Error = true
 			errors.Errors = append(errors.Errors, "Error when parsing Mongo data")
 			returnData := model.EnergyDataPointsReturn{
@@ -259,17 +246,6 @@ func CampusHomeKWHQuery(returnValue chan *model.EnergyDataPointsReturn, cache *r
 				Errors: &errors,
 			}
 			returnValue <- &returnData
-		}
-
-		for _, doc := range energyDataPointsBSON {
-			dataPoint := &model.EnergyDataPoint{
-				Building:     doc.BuildingName,
-				Value:        doc.EnergyValue,
-				DateTimeUnix: doc.UnixTimeValue,
-				Unit:         doc.EnergyUnit,
-				Type:         doc.EnergyType,
-			}
-			energyDataPointsJSON = append(energyDataPointsJSON, dataPoint)
 		}
 
 		addCache := datacache.SetCache(energyDataPointsJSON, cache, "24h20m", "campus-kwh")

@@ -46,17 +46,17 @@ type ComplexityRoot struct {
 		Building    func(childComplexity int) int
 		DisplayName func(childComplexity int) int
 		EnergyInfo  func(childComplexity int) int
-		Errors      func(childComplexity int) int
 	}
 
-	DashboardHomePage struct {
-		CampusKw  func(childComplexity int) int
-		CampusKwh func(childComplexity int) int
+	BuildingsQueryReturn struct {
+		Data   func(childComplexity int) int
+		Errors func(childComplexity int) int
 	}
 
 	EnergyDataPoint struct {
 		Building     func(childComplexity int) int
 		DateTimeUnix func(childComplexity int) int
+		ID           func(childComplexity int) int
 		Type         func(childComplexity int) int
 		Unit         func(childComplexity int) int
 		Value        func(childComplexity int) int
@@ -70,6 +70,8 @@ type ComplexityRoot struct {
 	EnergyInfo struct {
 		EnergyType     func(childComplexity int) int
 		EnergyUnit     func(childComplexity int) int
+		MaxDate        func(childComplexity int) int
+		MinDate        func(childComplexity int) int
 		ReportInterval func(childComplexity int) int
 	}
 
@@ -83,18 +85,20 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		BuildingInfo      func(childComplexity int, input model.BuildingInfoInput) int
-		DashboardHomePage func(childComplexity int) int
-		EnergyDataPoints  func(childComplexity int, input model.EnergyDataPointQueryInput) int
-		Past24Hours       func(childComplexity int, input model.Past24HoursInput) int
+		BuildingInfo     func(childComplexity int) int
+		CampusKWCache    func(childComplexity int) int
+		CampusKWHCache   func(childComplexity int) int
+		EnergyDataPoints func(childComplexity int, input model.EnergyDataPointQueryInput) int
+		Past24Hours      func(childComplexity int, input model.Past24HoursInput) int
 	}
 }
 
 type QueryResolver interface {
 	EnergyDataPoints(ctx context.Context, input model.EnergyDataPointQueryInput) (*model.EnergyDataPointsReturn, error)
 	Past24Hours(ctx context.Context, input model.Past24HoursInput) (*model.EnergyDataPointsReturn, error)
-	DashboardHomePage(ctx context.Context) (*model.DashboardHomePage, error)
-	BuildingInfo(ctx context.Context, input model.BuildingInfoInput) (*model.BuildingInfo, error)
+	CampusKWHCache(ctx context.Context) (*model.EnergyDataPointsReturn, error)
+	CampusKWCache(ctx context.Context) (*model.EnergyDataPointsReturn, error)
+	BuildingInfo(ctx context.Context) (*model.BuildingsQueryReturn, error)
 }
 
 type executableSchema struct {
@@ -133,26 +137,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BuildingInfo.EnergyInfo(childComplexity), true
 
-	case "BuildingInfo.errors":
-		if e.complexity.BuildingInfo.Errors == nil {
+	case "BuildingsQueryReturn.data":
+		if e.complexity.BuildingsQueryReturn.Data == nil {
 			break
 		}
 
-		return e.complexity.BuildingInfo.Errors(childComplexity), true
+		return e.complexity.BuildingsQueryReturn.Data(childComplexity), true
 
-	case "DashboardHomePage.campusKW":
-		if e.complexity.DashboardHomePage.CampusKw == nil {
+	case "BuildingsQueryReturn.errors":
+		if e.complexity.BuildingsQueryReturn.Errors == nil {
 			break
 		}
 
-		return e.complexity.DashboardHomePage.CampusKw(childComplexity), true
-
-	case "DashboardHomePage.campusKWH":
-		if e.complexity.DashboardHomePage.CampusKwh == nil {
-			break
-		}
-
-		return e.complexity.DashboardHomePage.CampusKwh(childComplexity), true
+		return e.complexity.BuildingsQueryReturn.Errors(childComplexity), true
 
 	case "EnergyDataPoint.building":
 		if e.complexity.EnergyDataPoint.Building == nil {
@@ -167,6 +164,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EnergyDataPoint.DateTimeUnix(childComplexity), true
+
+	case "EnergyDataPoint.id":
+		if e.complexity.EnergyDataPoint.ID == nil {
+			break
+		}
+
+		return e.complexity.EnergyDataPoint.ID(childComplexity), true
 
 	case "EnergyDataPoint.type":
 		if e.complexity.EnergyDataPoint.Type == nil {
@@ -217,6 +221,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EnergyInfo.EnergyUnit(childComplexity), true
 
+	case "EnergyInfo.maxDate":
+		if e.complexity.EnergyInfo.MaxDate == nil {
+			break
+		}
+
+		return e.complexity.EnergyInfo.MaxDate(childComplexity), true
+
+	case "EnergyInfo.minDate":
+		if e.complexity.EnergyInfo.MinDate == nil {
+			break
+		}
+
+		return e.complexity.EnergyInfo.MinDate(childComplexity), true
+
 	case "EnergyInfo.reportInterval":
 		if e.complexity.EnergyInfo.ReportInterval == nil {
 			break
@@ -250,19 +268,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_buildingInfo_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
+		return e.complexity.Query.BuildingInfo(childComplexity), true
 
-		return e.complexity.Query.BuildingInfo(childComplexity, args["input"].(model.BuildingInfoInput)), true
-
-	case "Query.dashboardHomePage":
-		if e.complexity.Query.DashboardHomePage == nil {
+	case "Query.campusKWCache":
+		if e.complexity.Query.CampusKWCache == nil {
 			break
 		}
 
-		return e.complexity.Query.DashboardHomePage(childComplexity), true
+		return e.complexity.Query.CampusKWCache(childComplexity), true
+
+	case "Query.campusKWHCache":
+		if e.complexity.Query.CampusKWHCache == nil {
+			break
+		}
+
+		return e.complexity.Query.CampusKWHCache(childComplexity), true
 
 	case "Query.energyDataPoints":
 		if e.complexity.Query.EnergyDataPoints == nil {
@@ -343,6 +363,7 @@ var sources = []*ast.Source{
 # https://gqlgen.com/getting-started/
 
 type EnergyDataPoint {
+  id: String!
   value: Float! # Energy data value
   building: String! # Building name i.e. Davies
   dateTimeUnix: Int! # Date time value in Epoch time
@@ -372,13 +393,14 @@ type BuildingInfo {
   building: String!
   energyInfo: [EnergyInfo!]!
   displayName: String!
-  errors: Errors!
 }
 
 type EnergyInfo {
   energyType: String!
   energyUnit: String!
   reportInterval: Int!
+  minDate: Int!
+  maxDate: Int!
 }
 
 input BuildingInfoInput {
@@ -395,16 +417,17 @@ type EnergyDataPointsReturn {
   errors: Errors!
 }
 
-type DashboardHomePage {
-  campusKW: EnergyDataPointsReturn!
-  campusKWH: EnergyDataPointsReturn!
+type BuildingsQueryReturn {
+  data: [BuildingInfo]
+  errors: Errors!
 }
 
 type Query {
   energyDataPoints(input: EnergyDataPointQueryInput!): EnergyDataPointsReturn!
   past24Hours(input: Past24HoursInput!): EnergyDataPointsReturn!
-  dashboardHomePage: DashboardHomePage!
-  buildingInfo(input: BuildingInfoInput!): BuildingInfo!
+  campusKWHCache: EnergyDataPointsReturn!
+  campusKWCache: EnergyDataPointsReturn!
+  buildingInfo: BuildingsQueryReturn!
 }
 `, BuiltIn: false},
 }
@@ -426,21 +449,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_buildingInfo_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.BuildingInfoInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNBuildingInfoInput2energyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfoInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
 	return args, nil
 }
 
@@ -617,7 +625,7 @@ func (ec *executionContext) _BuildingInfo_displayName(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _BuildingInfo_errors(ctx context.Context, field graphql.CollectedField, obj *model.BuildingInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildingsQueryReturn_data(ctx context.Context, field graphql.CollectedField, obj *model.BuildingsQueryReturn) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -625,7 +633,39 @@ func (ec *executionContext) _BuildingInfo_errors(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "BuildingInfo",
+		Object:     "BuildingsQueryReturn",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.BuildingInfo)
+	fc.Result = res
+	return ec.marshalOBuildingInfo2ᚕᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BuildingsQueryReturn_errors(ctx context.Context, field graphql.CollectedField, obj *model.BuildingsQueryReturn) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "BuildingsQueryReturn",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -652,7 +692,7 @@ func (ec *executionContext) _BuildingInfo_errors(ctx context.Context, field grap
 	return ec.marshalNErrors2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐErrors(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DashboardHomePage_campusKW(ctx context.Context, field graphql.CollectedField, obj *model.DashboardHomePage) (ret graphql.Marshaler) {
+func (ec *executionContext) _EnergyDataPoint_id(ctx context.Context, field graphql.CollectedField, obj *model.EnergyDataPoint) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -660,7 +700,7 @@ func (ec *executionContext) _DashboardHomePage_campusKW(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "DashboardHomePage",
+		Object:     "EnergyDataPoint",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -670,7 +710,7 @@ func (ec *executionContext) _DashboardHomePage_campusKW(ctx context.Context, fie
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CampusKw, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -682,44 +722,9 @@ func (ec *executionContext) _DashboardHomePage_campusKW(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.EnergyDataPointsReturn)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNEnergyDataPointsReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐEnergyDataPointsReturn(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _DashboardHomePage_campusKWH(ctx context.Context, field graphql.CollectedField, obj *model.DashboardHomePage) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "DashboardHomePage",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CampusKwh, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.EnergyDataPointsReturn)
-	fc.Result = res
-	return ec.marshalNEnergyDataPointsReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐEnergyDataPointsReturn(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EnergyDataPoint_value(ctx context.Context, field graphql.CollectedField, obj *model.EnergyDataPoint) (ret graphql.Marshaler) {
@@ -1072,6 +1077,76 @@ func (ec *executionContext) _EnergyInfo_reportInterval(ctx context.Context, fiel
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _EnergyInfo_minDate(ctx context.Context, field graphql.CollectedField, obj *model.EnergyInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EnergyInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EnergyInfo_maxDate(ctx context.Context, field graphql.CollectedField, obj *model.EnergyInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EnergyInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Errors_error(ctx context.Context, field graphql.CollectedField, obj *model.Errors) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1261,7 +1336,7 @@ func (ec *executionContext) _Query_past24Hours(ctx context.Context, field graphq
 	return ec.marshalNEnergyDataPointsReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐEnergyDataPointsReturn(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_dashboardHomePage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_campusKWHCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1279,7 +1354,7 @@ func (ec *executionContext) _Query_dashboardHomePage(ctx context.Context, field 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DashboardHomePage(rctx)
+		return ec.resolvers.Query().CampusKWHCache(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1291,9 +1366,44 @@ func (ec *executionContext) _Query_dashboardHomePage(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.DashboardHomePage)
+	res := resTmp.(*model.EnergyDataPointsReturn)
 	fc.Result = res
-	return ec.marshalNDashboardHomePage2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐDashboardHomePage(ctx, field.Selections, res)
+	return ec.marshalNEnergyDataPointsReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐEnergyDataPointsReturn(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_campusKWCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CampusKWCache(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EnergyDataPointsReturn)
+	fc.Result = res
+	return ec.marshalNEnergyDataPointsReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐEnergyDataPointsReturn(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_buildingInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1312,16 +1422,9 @@ func (ec *executionContext) _Query_buildingInfo(ctx context.Context, field graph
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_buildingInfo_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BuildingInfo(rctx, args["input"].(model.BuildingInfoInput))
+		return ec.resolvers.Query().BuildingInfo(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1333,9 +1436,9 @@ func (ec *executionContext) _Query_buildingInfo(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.BuildingInfo)
+	res := resTmp.(*model.BuildingsQueryReturn)
 	fc.Result = res
-	return ec.marshalNBuildingInfo2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx, field.Selections, res)
+	return ec.marshalNBuildingsQueryReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingsQueryReturn(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2638,11 +2741,6 @@ func (ec *executionContext) _BuildingInfo(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "errors":
-			out.Values[i] = ec._BuildingInfo_errors(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2654,24 +2752,21 @@ func (ec *executionContext) _BuildingInfo(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var dashboardHomePageImplementors = []string{"DashboardHomePage"}
+var buildingsQueryReturnImplementors = []string{"BuildingsQueryReturn"}
 
-func (ec *executionContext) _DashboardHomePage(ctx context.Context, sel ast.SelectionSet, obj *model.DashboardHomePage) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, dashboardHomePageImplementors)
+func (ec *executionContext) _BuildingsQueryReturn(ctx context.Context, sel ast.SelectionSet, obj *model.BuildingsQueryReturn) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, buildingsQueryReturnImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("DashboardHomePage")
-		case "campusKW":
-			out.Values[i] = ec._DashboardHomePage_campusKW(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "campusKWH":
-			out.Values[i] = ec._DashboardHomePage_campusKWH(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("BuildingsQueryReturn")
+		case "data":
+			out.Values[i] = ec._BuildingsQueryReturn_data(ctx, field, obj)
+		case "errors":
+			out.Values[i] = ec._BuildingsQueryReturn_errors(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2697,6 +2792,11 @@ func (ec *executionContext) _EnergyDataPoint(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("EnergyDataPoint")
+		case "id":
+			out.Values[i] = ec._EnergyDataPoint_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "value":
 			out.Values[i] = ec._EnergyDataPoint_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -2788,6 +2888,16 @@ func (ec *executionContext) _EnergyInfo(ctx context.Context, sel ast.SelectionSe
 			}
 		case "reportInterval":
 			out.Values[i] = ec._EnergyInfo_reportInterval(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "minDate":
+			out.Values[i] = ec._EnergyInfo_minDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maxDate":
+			out.Values[i] = ec._EnergyInfo_maxDate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2904,7 +3014,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "dashboardHomePage":
+		case "campusKWHCache":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2912,7 +3022,21 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_dashboardHomePage(ctx, field)
+				res = ec._Query_campusKWHCache(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "campusKWCache":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_campusKWCache(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3207,37 +3331,18 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNBuildingInfo2energyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx context.Context, sel ast.SelectionSet, v model.BuildingInfo) graphql.Marshaler {
-	return ec._BuildingInfo(ctx, sel, &v)
+func (ec *executionContext) marshalNBuildingsQueryReturn2energyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingsQueryReturn(ctx context.Context, sel ast.SelectionSet, v model.BuildingsQueryReturn) graphql.Marshaler {
+	return ec._BuildingsQueryReturn(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNBuildingInfo2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx context.Context, sel ast.SelectionSet, v *model.BuildingInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNBuildingsQueryReturn2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingsQueryReturn(ctx context.Context, sel ast.SelectionSet, v *model.BuildingsQueryReturn) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._BuildingInfo(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNBuildingInfoInput2energyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfoInput(ctx context.Context, v interface{}) (model.BuildingInfoInput, error) {
-	res, err := ec.unmarshalInputBuildingInfoInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNDashboardHomePage2energyᚑdashboardᚑapiᚋgraphᚋmodelᚐDashboardHomePage(ctx context.Context, sel ast.SelectionSet, v model.DashboardHomePage) graphql.Marshaler {
-	return ec._DashboardHomePage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDashboardHomePage2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐDashboardHomePage(ctx context.Context, sel ast.SelectionSet, v *model.DashboardHomePage) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DashboardHomePage(ctx, sel, v)
+	return ec._BuildingsQueryReturn(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEnergyDataPoint2ᚕᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐEnergyDataPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnergyDataPoint) graphql.Marshaler {
@@ -3694,6 +3799,53 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalOBuildingInfo2ᚕᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx context.Context, sel ast.SelectionSet, v []*model.BuildingInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOBuildingInfo2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOBuildingInfo2ᚖenergyᚑdashboardᚑapiᚋgraphᚋmodelᚐBuildingInfo(ctx context.Context, sel ast.SelectionSet, v *model.BuildingInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BuildingInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

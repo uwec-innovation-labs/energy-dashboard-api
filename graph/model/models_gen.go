@@ -6,19 +6,19 @@ type BuildingInfo struct {
 	Building    string        `json:"building"`
 	EnergyInfo  []*EnergyInfo `json:"energyInfo"`
 	DisplayName string        `json:"displayName"`
-	Errors      *Errors       `json:"errors"`
 }
 
 type BuildingInfoInput struct {
 	BuildingName string `json:"buildingName"`
 }
 
-type DashboardHomePage struct {
-	CampusKw  *EnergyDataPointsReturn `json:"campusKW"`
-	CampusKwh *EnergyDataPointsReturn `json:"campusKWH"`
+type BuildingsQueryReturn struct {
+	Data   []*BuildingInfo `json:"data"`
+	Errors *Errors         `json:"errors"`
 }
 
 type EnergyDataPoint struct {
+	ID           string  `json:"id" bson:"_id"`
 	Value        float64 `json:"value"`
 	Building     string  `json:"building"`
 	DateTimeUnix int     `json:"dateTimeUnix"`
@@ -43,6 +43,8 @@ type EnergyInfo struct {
 	EnergyType     string `json:"energyType"`
 	EnergyUnit     string `json:"energyUnit"`
 	ReportInterval int    `json:"reportInterval"`
+	MinDate        int    `json:"minDate"`
+	MaxDate        int    `json:"maxDate"`
 }
 
 type Errors struct {
